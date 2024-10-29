@@ -2,14 +2,6 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-/**
- * env.h must contain the following variables:
- * DATABASE_SECRET: Secret key to Firebase's Realtime Database
- * DATABASE_URL: URL to Firebase's Realtime Database
- * WIFI_SSID: Name of the wifi network
- * WIFI_PASSWORD: password to the wifi network
- * 
- */
 #include <env.h>
 
 #include <addons/RTDBHelper.h>
