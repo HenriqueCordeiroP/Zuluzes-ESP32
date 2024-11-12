@@ -6,22 +6,22 @@
 
 #include <addons/RTDBHelper.h>
 
-/* 3. Define the Firebase Data object */
 FirebaseData fbdo;
 
-/* 4, Define the FirebaseAuth data for authentication data */
 FirebaseAuth auth;
 
-/* Define the FirebaseConfig data for config data */
 FirebaseConfig config;
 
-unsigned long dataMillis = 0;
-int count = 0;
+int pushupTarget = 0;
+int fetchedValue = NULL;
+int reset = 0;
+
 
 void setup()
 {
 
     Serial.begin(9600);
+    Serial2.begin(115200); // comms 
 
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.print("Connecting to Wi-Fi");
@@ -41,29 +41,45 @@ void setup()
     // config.cert.file = "/cert.cer";
     // config.cert.file_storage = StorageType::FLASH;
 
-    /* Assign the database URL and database secret(required) */
     config.database_url = DATABASE_URL;
     config.signer.tokens.legacy_token = DATABASE_SECRET;
 
-    // Comment or pass false value when WiFi reconnection will control by your code or third party library e.g. WiFiManager
     Firebase.reconnectNetwork(true);
 
-    // Since v4.4.x, BearSSL engine was used, the SSL buffer need to be set.
-    // Large data transmission may require larger RX buffer, otherwise connection issue or data read time out can be occurred.
     fbdo.setBSSLBufferSize(4096 /* Rx buffer size in bytes from 512 - 16384 */, 1024 /* Tx buffer size in bytes from 512 - 16384 */);
 
-    /* Initialize the library with the Firebase authen and config */
     Firebase.begin(&config, &auth);
 
-    // Or use legacy authenticate method
-    // Firebase.begin(DATABASE_URL, DATABASE_SECRET);
+
+    // Serial.printf("Get int ref... %s\r\n", Firebase.getInt(fbdo, F("/pushups/target"), &pushupTarget) ? "ok" : fbdo.errorReason().c_str());
+
+    // Serial.printf("Initial target: %d\n", pushupTarget);
+    // Serial2.printf("%d\n", pushupTarget);
+
 }
 
 void loop()
 {
-    if (millis() - dataMillis > 5000)
-    {
-        dataMillis = millis();
-        Serial.printf("Set int... %s\n", Firebase.setInt(fbdo, "/test/int", count++) ? "ok" : fbdo.errorReason().c_str());
+
+    Firebase.getInt(fbdo, F("/pushups/target"), &fetchedValue);
+    Firebase.getInt(fbdo, F("/pushups/reset"), &reset);
+
+    if(reset){
+        Serial2.printf("%c", 'J');
+        Firebase.setInt(fbdo, F("/pushups/reset"), 0);
+        Serial.print("Resetting from Firebase\n");
+    }
+
+    if(fetchedValue != pushupTarget){
+        pushupTarget = fetchedValue;
+        Serial2.printf("%d\n", pushupTarget);
+        Serial.printf("New target: %d\n", pushupTarget);
+    }
+
+    if(Serial.available()){
+        if(Serial.read()){
+            Serial.printf("Current target: %d\n", pushupTarget);
+            Serial2.printf("%d\n", pushupTarget);
+        }
     }
 }
