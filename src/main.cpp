@@ -12,8 +12,8 @@ FirebaseAuth auth;
 
 FirebaseConfig config;
 
-int pushupTarget = 0;
-int fetchedValue = NULL;
+int pushupTarget = -1;
+int fetchedValue = 0;
 int reset = 0;
 
 
@@ -66,20 +66,16 @@ void loop()
 
     if(reset){
         Serial2.printf("%c", 'J');
+        pushupTarget = -1;
+        fetchedValue = -1;
+        Firebase.setInt(fbdo, F("/pushups/target"), -1);
         Firebase.setInt(fbdo, F("/pushups/reset"), 0);
         Serial.print("Resetting from Firebase\n");
     }
 
-    if(fetchedValue != pushupTarget){
+    if((fetchedValue > 0 || pushupTarget > 0) && fetchedValue != pushupTarget){
         pushupTarget = fetchedValue;
         Serial2.printf("%d\n", pushupTarget);
         Serial.printf("New target: %d\n", pushupTarget);
-    }
-
-    if(Serial.available()){
-        if(Serial.read()){
-            Serial.printf("Current target: %d\n", pushupTarget);
-            Serial2.printf("%d\n", pushupTarget);
-        }
     }
 }
